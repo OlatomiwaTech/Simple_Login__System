@@ -5,11 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const prisma_js_1 = __importDefault(require("./lib/prisma.js"));
 const auth_routes_js_1 = __importDefault(require("./routes/auth.routes.js"));
 const app = (0, express_1.default)();
 const PORT = 5000;
 app.use(express_1.default.json());
+app.use((0, cookie_parser_1.default)());
 app.get("/", (_req, res) => {
     res.json({
         message: "Simple Login System API is running",
