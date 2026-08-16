@@ -1,7 +1,10 @@
+import "dotenv/config";
 import express from "express";
 import prisma from "./lib/prisma.js";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
+
 const PORT = 5000;
 
 app.use(express.json());
@@ -29,6 +32,8 @@ app.get("/test-db", async (_req, res) => {
     });
   }
 });
+
+app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
