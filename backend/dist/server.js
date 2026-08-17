@@ -1,17 +1,19 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv/config");
-const express_1 = __importDefault(require("express"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const prisma_js_1 = __importDefault(require("./lib/prisma.js"));
-const auth_routes_js_1 = __importDefault(require("./routes/auth.routes.js"));
-const app = (0, express_1.default)();
-const PORT = 5000;
-app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import prisma from "./lib/prisma.js";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+const app = express();
+const PORT = Number(process.env.PORT) || 5000;
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+app.use(cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+}));
+app.use(express.json());
+app.use(cookieParser());
 app.get("/", (_req, res) => {
     res.json({
         message: "Simple Login System API is running",
@@ -19,7 +21,7 @@ app.get("/", (_req, res) => {
 });
 app.get("/test-db", async (_req, res) => {
     try {
-        const users = await prisma_js_1.default.user.findMany();
+        const users = await prisma.user.findMany();
         res.json({
             success: true,
             users,
@@ -33,7 +35,8 @@ app.get("/test-db", async (_req, res) => {
         });
     }
 });
-app.use("/api/auth", auth_routes_js_1.default);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

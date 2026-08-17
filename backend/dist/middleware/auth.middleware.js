@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.requireAuth = requireAuth;
-const session_js_1 = require("../utils/session.js");
-async function requireAuth(req, res, next) {
+import { getSession } from "../utils/session.js";
+export async function requireAuth(req, res, next) {
     try {
         const sessionId = req.cookies.session_id;
         if (!sessionId) {
@@ -11,7 +8,7 @@ async function requireAuth(req, res, next) {
                 message: "Authentication required",
             });
         }
-        const session = await (0, session_js_1.getSession)(sessionId);
+        const session = await getSession(sessionId);
         if (!session) {
             res.clearCookie("session_id", {
                 httpOnly: true,

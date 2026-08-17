@@ -1,19 +1,13 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.register = register;
-exports.login = login;
-const prisma_js_1 = __importDefault(require("../lib/prisma.js"));
-const password_js_1 = require("../utils/password.js");
-const password_js_2 = require("../utils/password.js");
-const session_js_1 = require("../utils/session.js");
-const auth_validator_js_1 = require("../validators/auth.validator.js");
-const auth_validator_js_2 = require("../validators/auth.validator.js");
-async function register(req, res) {
+import prisma from "../lib/prisma.js";
+import { hashPassword } from "../utils/password.js";
+import { verifyPassword } from "../utils/password.js";
+import { createSession } from "../utils/session.js";
+import { loginSchema } from "../validators/auth.validator.js";
+import { registerSchema } from "../validators/auth.validator.js";
+import { deleteSession, } from "../utils/session.js";
+export async function register(req, res) {
     try {
-        const result = auth_validator_js_2.registerSchema.safeParse(req.body);
+        const result = registerSchema.safeParse(req.body);
         if (!result.success) {
             return res.status(400).json({
                 success: false,
@@ -22,7 +16,7 @@ async function register(req, res) {
             });
         }
         const { name, email, password } = result.data;
-        const existingUser = await prisma_js_1.default.user.findUnique({
+        const existingUser = await prisma.user.findUnique({
             where: { email },
         });
         if (existingUser) {
@@ -31,8 +25,8 @@ async function register(req, res) {
                 message: "A user with this email already exists",
             });
         }
-        const passwordHash = await (0, password_js_1.hashPassword)(password);
-        const user = await prisma_js_1.default.user.create({
+        const passwordHash = await hashPassword(password);
+        const user = await prisma.user.create({
             data: {
                 name,
                 email,
@@ -60,9 +54,9 @@ async function register(req, res) {
         });
     }
 }
-async function login(req, res) {
+export async function login(req, res) {
     try {
-        const result = auth_validator_js_1.loginSchema.safeParse(req.body);
+        const result = loginSchema.safeParse(req.body);
         if (!result.success) {
             return res.status(400).json({
                 success: false,
@@ -71,7 +65,7 @@ async function login(req, res) {
             });
         }
         const { email, password } = result.data;
-        const user = await prisma_js_1.default.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: { email },
         });
         if (!user) {
@@ -80,18 +74,19 @@ async function login(req, res) {
                 message: "Invalid email or password",
             });
         }
-        const passwordIsValid = await (0, password_js_2.verifyPassword)(password, user.passwordHash);
+        const passwordIsValid = await verifyPassword(password, user.passwordHash);
         if (!passwordIsValid) {
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password",
             });
         }
-        const sessionId = await (0, session_js_1.createSession)(user.id);
+        const sessionId = await createSession(user.id);
+        const isProduction = process.env.NODE_ENV === "production";
         res.cookie("session_id", sessionId, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
             maxAge: 1000 * 60 * 60 * 24 * 7,
             path: "/",
         });
@@ -107,6 +102,32 @@ async function login(req, res) {
     }
     catch (error) {
         console.error("Login error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+export async function logout(req, res) {
+    try {
+        const sessionId = req.cookies.session_id;
+        if (sessionId) {
+            await deleteSession(sessionId);
+        }
+        const isProduction = process.env.NODE_ENV === "production";
+        res.clearCookie("session_id", {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+            path: "/",
+        });
+        return res.status(200).json({
+            success: true,
+            message: "Logout successful",
+        });
+    }
+    catch (error) {
+        console.error("Logout error:", error);
         return res.status(500).json({
             success: false,
             message: "Internal server error",

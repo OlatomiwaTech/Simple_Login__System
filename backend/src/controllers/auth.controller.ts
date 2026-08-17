@@ -106,10 +106,12 @@ export async function login(req: Request, res: Response) {
 
     const sessionId = await createSession(user.id);
 
+   const isProduction = process.env.NODE_ENV === "production";
+
     res.cookie("session_id", sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
       path: "/",
     });
@@ -140,10 +142,12 @@ export async function logout(req: Request, res: Response) {
       await deleteSession(sessionId);
     }
 
+const isProduction = process.env.NODE_ENV === "production";
+
     res.clearCookie("session_id", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
 

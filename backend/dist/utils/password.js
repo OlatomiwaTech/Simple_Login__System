@@ -1,14 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.hashPassword = hashPassword;
-exports.verifyPassword = verifyPassword;
-const argon2_1 = __importDefault(require("argon2"));
-async function hashPassword(password) {
-    return argon2_1.default.hash(password);
+import argon2 from "argon2";
+export async function hashPassword(password) {
+    return argon2.hash(password);
 }
-async function verifyPassword(password, passwordHash) {
-    return argon2_1.default.verify(passwordHash, password);
+export async function verifyPassword(password, passwordHash) {
+    return argon2.verify(passwordHash, password);
 }
